@@ -5,11 +5,13 @@ respawn
 exec su - <%= user %> -c 'cd <%= engine.root %>; export PORT=<%= port %>;<% engine.env.each_pair do |var,env| %> export <%= var.upcase %>=<%= shell_quote(env) %>; <% end %> <%= process.command %> >> <%= log %>/<%=name%>-<%=num%>.log 2>&1'
 
 post-start script
+  sleep 5
   PID=`status <%= app %>-<%= name %>-<%=num%> | egrep -oi '([0-9]+)$' | head -n1`
   mkdir -p /var/run/<%= app %>
-  echo $PID > /var/run/<%= app %>/<%= name %>-<%=num%>.pid
+  pstree -p $PID | sed 's/(/\n(/g' | grep '(' | sed 's/(\(.*\)).*/\1/' | tail -n 3 > /var/run/<%= app %>/<%= name %>-<%=num%>.pids
 end script
 
 post-stop script
-  rm -f /var/run/<%= app %>/<%= name %>-<%=num%>.pid
+  pkill -F /var/run/<%= app %>/<%= name %>-<%=num%>.pids
+  rm -f /var/run/<%= app %>/<%= name %>-<%=num%>.pids
 end script
